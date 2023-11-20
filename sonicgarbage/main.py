@@ -14,20 +14,30 @@ app = Flask(__name__)
 # Base directory on the server (modify this path as needed)
 base_dir = '/var/www/audio'
 
-# Function to create a timestamped folder
-def create_timestamped_folder():
+# Create the 'archive' folder if it does not exist
+archive_dir = os.path.join(base_dir, 'archive')
+if not os.path.exists(archive_dir):
+    os.makedirs(archive_dir)
+
+# Revised function to create timestamped subfolders
+def create_timestamped_subfolders(base_dir):
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
-    path = os.path.join(base_dir, timestamp)
-    os.makedirs(path, exist_ok=True)
-    return path
+    directories = ['wavs/processed/loop', 'wavs/processed/oneshot', 
+                   'wavs/raw', 'wavs/processed/combined']
+    timestamped_dirs = {}
+    for dir in directories:
+        path = os.path.join(base_dir, dir, timestamp)
+        os.makedirs(path, exist_ok=True)
+        timestamped_dirs[dir] = path
+    return timestamped_dirs
 
-current_run_dir = create_timestamped_folder()
+# Using the new function to get the paths of the timestamped subdirectories
+timestamped_dirs = create_timestamped_subfolders(base_dir)
 
-# Paths for the folders within the timestamped folder
-loop_dir = os.path.join(current_run_dir, 'wavs/processed/loop')
-oneshot_dir = os.path.join(current_run_dir, 'wavs/processed/oneshot')
-raw_dir = os.path.join(current_run_dir, 'wavs/raw')
-combined_dir = os.path.join(current_run_dir, 'wavs/processed/combined')
+loop_dir = timestamped_dirs['wavs/processed/loop']
+oneshot_dir = timestamped_dirs['wavs/processed/oneshot']
+raw_dir = timestamped_dirs['wavs/raw']
+combined_dir = timestamped_dirs['wavs/processed/combined']
 
 # Create the required folders if they don't exist
 os.makedirs(loop_dir, exist_ok=True)
@@ -46,6 +56,13 @@ if not os.path.exists(word_list_file):
             file.write(word + '\n')
 
 # Functions from the original notebook for audio processing
+BATCH_SIZE         = 320
+MAX_SEARCH_RESULTS = 10
+DOWNLOAD_DIR       = 'wavs/raw'
+LOOP_OUTPUT_DIR    = 'wavs/processed/loop'
+ONESHOT_OUTPUT_DIR = 'wavs/processed/oneshot'
+WORD_LIST          = 'birdwater.txt'
+
 def read_lines(file):
     return open(file).read().splitlines()
 
@@ -171,6 +188,35 @@ def main():
     # Generate new index.html with updated audio files
     archive_existing_index('/var/www/audio/index.html')
     update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+
+# Function to update the archive index.html file
+def update_archive_html(archived_file_path):
+    archive_index_path = os.path.join(archive_dir, 'index.html')
+    link = f'<li><a href="{archived_file_path}">{os.path.basename(archived_file_path)}</a></li>'
+
+    if not os.path.exists(archive_index_path):
+        with open(archive_index_path, 'w') as archive_file:
+            archive_file.write('<html><head><title>Sonic Garbage Archive</title></head><body>')
+            archive_file.write('<h1>Sonic Garbage Archive</h1><ul>')
+            archive_file.write(link)
+            archive_file.write('</ul></body></html>')
+    else:
+        with open(archive_index_path, 'r+') as archive_file:
+            content = archive_file.read()
+            position = content.find('</ul>')
+            content = content[:position] + link + content[position:]
+            archive_file.seek(0)
+            archive_file.write(content)
+
+# Function to archive existing index.html
+def archive_existing_index(output_html_file_path):
+    if os.path.exists(output_html_file_path):
+        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        archived_file_name = f'index.{timestamp}.html'
+        archived_file_path = os.path.join(archive_dir, archived_file_name)
+        os.rename(output_html_file_path, archived_file_path)
+        update_archive_html(archived_file_path)  # Update the archive index.html
+
 
 # Flask route to trigger the main function
 @app.route('/run-script')
