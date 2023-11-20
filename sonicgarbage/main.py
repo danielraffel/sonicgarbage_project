@@ -161,6 +161,45 @@ def create_combined_loop():
 
     combined_loop.export(output_filepath, format="wav")
 
+def generate_html_for_audio_files(directory):
+    html_content = ""
+    file_count = 0
+
+    # Fetching the timestamped subdirectories
+    timestamped_dirs = create_timestamped_subfolders(directory)
+    loop_dir = timestamped_dirs['wavs/processed/loop']
+
+    # List files in the timestamped loop directory
+    files = sorted([f for f in os.listdir(loop_dir) if f.endswith('.wav')])
+
+    html_content += '<div class="row">'
+
+    for file in files:
+        file_name = file.split('-')[-1].split('.')[0]
+        file_path = os.path.relpath(os.path.join(loop_dir, file), directory)
+        # Add the audio file div without playback controls
+        html_content += f'<div class="audio-file"><div>{file_name}</div><audio src="{file_path}"></audio></div>'
+        
+        file_count += 1
+        if file_count % 3 != 0:
+            html_content += ' '
+        if file_count % 3 == 0 and file_count != len(files):
+            html_content += '</div><div class="row">'
+
+    html_content += '</div>'
+    return f'<div class="container">{html_content}</div>'
+
+def update_html_file(template_html_file_path, output_html_file_path, directory):
+    html_to_insert = generate_html_for_audio_files(directory)
+
+    with open(template_html_file_path, 'r') as template_file:
+        template_html_content = template_file.read()
+
+    modified_html_content = template_html_content.replace('<!-- Audio files will be added here -->', html_to_insert)
+
+    with open(output_html_file_path, 'w') as output_file:
+        output_file.write(modified_html_content)
+
 def setup():
     if not os.path.exists(LOOP_OUTPUT_DIR):
         os.makedirs(LOOP_OUTPUT_DIR)
@@ -169,21 +208,32 @@ def setup():
 
 # Main function where audio processing happens
 def main():
-    try:
-        setup()
-        word_list = read_lines(WORD_LIST)
-        for _ in range(BATCH_SIZE):
+    setup()
+    word_list = read_lines(WORD_LIST)
+
+    for _ in range(BATCH_SIZE):
+        attempts = 0
+        while attempts < MAX_ATTEMPTS_PER_VIDEO:
             phrase = make_random_search_phrase(word_list)
             video_url = f'ytsearch1:"{phrase}"'
             options = make_download_options(phrase)
-            YoutubeDL(options).download([video_url])
-            for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
-                process_file(filepath, phrase)
 
-        create_combined_loop()  # Call this function to create the combined loop
+            try:
+                YoutubeDL(options).download([video_url])
+                break  # Successful download, break out of the while loop
+            except Exception as err:
+                if "requires payment" in str(err):
+                    print(f"Skipping paid video: {video_url}")
+                else:
+                    print(f'Error during download: {err}')
+                attempts += 1  # Increment attempts
 
-    except Exception as err:
-        print('FATAL ERROR: {}'.format(err))
+        # Process downloaded files
+        for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
+            process_file(filepath, phrase)
+
+    # Create combined loop
+    create_combined_loop()
 
     # Generate new index.html with updated audio files
     archive_existing_index('/var/www/audio/index.html')
