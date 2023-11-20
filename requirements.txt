@@ -1,0 +1,5 @@
+Flask
+gunicorn
+pydub
+yt-dlp
+nltk

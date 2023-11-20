@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sonic Garbage</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            padding: 50px;
+            margin: 0; /* Remove default margin */
+        }
+        .title {
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        .container {
+            text-align: center; /* Center the rows in the container */
+            font-family: monospace; /* Ensures that the whitespace is consistently sized */
+        }
+        .row {
+            line-height: 1.5; /* Adjusts the vertical spacing between rows */
+        }
+        .audio-file {
+            display: inline-block; /* Allows for normal white-space handling */
+            font-size: 16px; /* Start with a base font size */
+            position: relative; /* Needed for absolute positioning of the link */
+        }
+        .audio-file a {
+            color: transparent; /* Make the link text transparent */
+            text-decoration: none; /* No underline */
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+        .audio-file:hover a {
+            color: inherit; /* Show the link on hover (optional) */
+        }
+        .bold {
+            font-weight: bold;
+        }
+        /* Responsive styling for smaller screens */
+        @media (max-width: 600px) {
+            .audio-file {
+                font-size: 14px; /* Smaller font size on small screens */
+            }
+            body {
+                padding: 20px; /* Less padding on small screens */
+            }
+            .title {
+                font-size: 1.5em; /* Smaller title on small screens */
+            }
+        }
+    </style>    
+</head>
+<body>
+    <div class="title">Sonic Garbage</div>
+    <div class="container">
+        <!-- Audio files will be added here -->
+    </div>
+    <script>
+        // Initialize AudioContext for audio playback
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        let currentSource = null; // Track currently playing audio source
+    
+        // Function to play the audio buffer
+        function playBuffer(audioBuffer, div) {
+            // Stop and unbold the currently playing audio if any
+            if (currentSource) {
+                currentSource.stop();
+                currentSource.div.classList.remove('bold');
+            }
+    
+            // Create a new buffer source for playing
+            const source = audioContext.createBufferSource();
+            source.buffer = audioBuffer;
+            source.connect(audioContext.destination);
+            source.loop = true;
+            source.start(0);
+            source.div = div; // Store reference to the div
+            currentSource = source; // Update currently playing source
+            div.classList.add('bold'); // Make the text bold
+        }
+    
+        // Function to fetch and decode audio data
+        async function fetchAndDecodeAudio(audioElement) {
+            const response = await fetch(audioElement.src);
+            const arrayBuffer = await response.arrayBuffer();
+            return audioContext.decodeAudioData(arrayBuffer);
+        }
+    
+        // Function to stop playing audio when clicking on the background
+        function handleBackgroundTap() {
+            if (currentSource) {
+                currentSource.stop();
+                currentSource.div.classList.remove('bold');
+                currentSource = null;
+            }
+        }
+    
+        // Function to check if audio is playing
+        function isAudioPlaying() {
+            return currentSource !== null;
+        }
+    
+        // Function to initiate download of audio file
+        function downloadAudio(src, filename) {
+            const a = document.createElement('a');
+            a.href = src;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+    
+        // Right-click event listener for downloading audio on desktop
+        document.addEventListener('contextmenu', function(e) {
+            let target = e.target;
+            if (target.classList.contains('audio-file') || target.parentElement.classList.contains('audio-file')) {
+                const audio = target.querySelector('audio') || target.parentElement.querySelector('audio');
+                if (audio) {
+                    downloadAudio(audio.src, audio.src.split('/').pop());
+                    e.preventDefault();
+                }
+            }
+        });
+    
+        // Window load event to initialize audio files and add event listeners
+        window.onload = async function() {
+            // Add event listener for tapping on the background
+            document.body.addEventListener('click', handleBackgroundTap);
+            
+            const audioFiles = document.querySelectorAll('.audio-file');
+    
+            for (const div of audioFiles) {
+                const audioElement = div.querySelector('audio');
+                const audioBuffer = await fetchAndDecodeAudio(audioElement);
+    
+                // Set event listeners for both desktop and touch devices
+                div.addEventListener('click', async () => {
+                    if (audioContext.state === 'suspended') {
+                        await audioContext.resume();
+                    }
+                    playBuffer(audioBuffer, div);
+                });
+    
+                div.onmouseover = () => {
+                    if (!isAudioPlaying()) {
+                        playBuffer(audioBuffer, div);
+                    }
+                };
+    
+                div.onmouseleave = () => {
+                    if (currentSource) {
+                        currentSource.stop();
+                        currentSource.div.classList.remove('bold');
+                        currentSource = null;
+                    }
+                };
+    
+                // Long press download for mobile
+                let timer;
+                div.addEventListener('touchstart', function(e) {
+                    timer = setTimeout(function() {
+                        downloadAudio(audioElement.src, audioElement.src.split('/').pop());
+                    }, 2000); // 2 seconds
+                });
+    
+                div.addEventListener('touchend', function(e) {
+                    clearTimeout(timer); // Cancel the timer if touch ends
+                });
+            }
+        };
+    </script>      
+</body>
+</html>
