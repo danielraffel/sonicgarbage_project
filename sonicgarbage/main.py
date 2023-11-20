@@ -46,7 +46,8 @@ os.makedirs(raw_dir, exist_ok=True)
 os.makedirs(combined_dir, exist_ok=True)
 
 # Check if 'birdwater.txt' exists at the base directory, if not create it
-word_list_file = os.path.join(base_dir, 'birdwater.txt')
+word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
+
 if not os.path.exists(word_list_file):
     nltk.download('words')
     from nltk.corpus import words
@@ -102,21 +103,26 @@ def make_download_options(phrase):
     }
 
 def process_file(filepath, phrase):
+    success_count = 0
     try:
         safe_phrase = ''.join(x for x in phrase if x.isalnum() or x in "._- ")
-        filename                 = os.path.basename(filepath)
-        output_filepath_oneshot  = os.path.join(ONESHOT_OUTPUT_DIR, f'oneshot_{safe_phrase}-{filename}')
-        output_filepath_loop     = os.path.join(LOOP_OUTPUT_DIR, f'loop_{safe_phrase}-{filename}')
+        filename = os.path.basename(filepath)
+        output_filepath_oneshot = os.path.join(ONESHOT_OUTPUT_DIR, f'oneshot_{safe_phrase}-{filename}')
+        output_filepath_loop = os.path.join(LOOP_OUTPUT_DIR, f'loop_{safe_phrase}-{filename}')
 
         sound = AudioSegment.from_file(filepath, "wav")
         if len(sound) > 500:
             if not os.path.exists(output_filepath_oneshot):
                 make_oneshot(sound, phrase, output_filepath_oneshot)
+                success_count += 1
             if not os.path.exists(output_filepath_loop):
                 make_loop(sound, phrase, output_filepath_loop)
+                success_count += 1
         os.remove(filepath)
     except Exception as err:
         print("Failed to process '{}' ({})".format(filepath, err))
+
+    return success_count
 
 def make_oneshot(sound, phrase, output_filepath):
   final_length = min(2000, len(sound))
@@ -212,8 +218,9 @@ MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for
 def main():
     setup()
     word_list = read_lines(WORD_LIST)
+    total_success_count = 0
 
-    for _ in range(BATCH_SIZE):
+    while total_success_count < 45:
         attempts = 0
         while attempts < MAX_ATTEMPTS_PER_VIDEO:
             phrase = make_random_search_phrase(word_list)
@@ -222,6 +229,12 @@ def main():
 
             try:
                 YoutubeDL(options).download([video_url])
+                # Process downloaded files
+                for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
+                    success_count = process_file(filepath, phrase)
+                    total_success_count += success_count
+                    if total_success_count >= 45:
+                        break
                 break  # Successful download, break out of the while loop
             except Exception as err:
                 if "requires payment" in str(err):
@@ -230,9 +243,8 @@ def main():
                     print(f'Error during download: {err}')
                 attempts += 1  # Increment attempts
 
-        # Process downloaded files
-        for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
-            process_file(filepath, phrase)
+        if total_success_count >= 45:
+            break
 
     # Create combined loop
     create_combined_loop()
