@@ -3,3 +3,4 @@ gunicorn
 pydub
 yt-dlp
 nltk
+click>=8.1.3

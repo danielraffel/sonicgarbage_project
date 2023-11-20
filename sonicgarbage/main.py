@@ -122,7 +122,7 @@ def main():
 
     # Generate new index.html with updated audio files
     archive_existing_index('/var/www/audio/index.html')  # Replace with your path
-    update_html_file('/var/www/audio/sonicgarbage/template_index.html', '/var/www/audio/index.html', loop_dir)
+    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
 
 # Flask route to trigger the main function
 @app.route('/run-script')
