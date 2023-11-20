@@ -212,10 +212,12 @@ def update_archive_html(archived_file_path):
 def archive_existing_index(output_html_file_path):
     if os.path.exists(output_html_file_path):
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        # Ensure the archived file is placed in the 'archive' directory
         archived_file_name = f'index.{timestamp}.html'
         archived_file_path = os.path.join(archive_dir, archived_file_name)
         os.rename(output_html_file_path, archived_file_path)
-        update_archive_html(archived_file_path)  # Update the archive index.html
+        # Update the archive index.html within the 'archive' directory
+        update_archive_html(archived_file_path)
 
 
 # Flask route to trigger the main function
