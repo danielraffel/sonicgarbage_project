@@ -207,6 +207,8 @@ def setup():
         os.makedirs(ONESHOT_OUTPUT_DIR)
 
 # Main function where audio processing happens
+MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for each phrase
+
 def main():
     setup()
     word_list = read_lines(WORD_LIST)
