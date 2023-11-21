@@ -245,23 +245,24 @@ def main():
         # Log and create a combined loop of processed audio files
         try:
             create_combined_loop(combined_dir)
-            print(f"Combined audio loop created in {combined_dir}")
+            print(f"Combined audio loop created in {os.path.join(combined_dir, 'combined_loop_v1.wav')}")
         except Exception as e:
-            print(f"Failed to create combined loop: {e}")
+            print(f"Failed to create combined loop in {combined_dir}: {e}")
 
         # Log and generate new index.html with updated audio files
         try:
             update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
-            print("index.html updated successfully.")
+            print("index.html updated successfully at /var/www/audio/index.html")
         except Exception as e:
-            print(f"Failed to update index.html: {e}")
+            print(f"Failed to update index.html at /var/www/audio/index.html: {e}")
 
         # Log and archive existing index.html with the timestamp
         try:
             archive_existing_index('/var/www/audio/index.html', timestamp)
-            print("index.html archived successfully.")
+            archived_file_path = os.path.join(archive_dir, f'index.{timestamp}.html')
+            print(f"index.html archived successfully at {archived_file_path}")
         except Exception as e:
-            print(f"Failed to archive index.html: {e}")
+            print(f"Failed to archive index.html at {archive_dir}: {e}")
     else:
         print("Failed to generate the required number of audio files.")
 
