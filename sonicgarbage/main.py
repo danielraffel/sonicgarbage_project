@@ -215,7 +215,7 @@ def main_threaded():
 MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for each phrase
 
 # Number of successful WAV audio files required to end the script
-SUCCESSFUL_WAVS_REQUIRED = 3
+SUCCESSFUL_WAVS_REQUIRED = 24
 
 def main():
     # Generate a unique timestamp for this run
