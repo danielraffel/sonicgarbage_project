@@ -165,6 +165,8 @@ def create_combined_loop(combined_dir):
         output_filepath = os.path.join(combined_dir, output_filename)
 
     combined_loop.export(output_filepath, format="wav")
+    # Return the path of the created file
+    return output_filepath
 
 def generate_html_for_audio_files(directory):
     html_content = ""
@@ -189,13 +191,18 @@ def generate_html_for_audio_files(directory):
     html_content += '</div>'
     return f'<div class="container">{html_content}</div>'
 
-def update_html_file(template_html_file_path, output_html_file_path, directory):
+def update_html_file(template_html_file_path, output_html_file_path, directory, combined_loop_relative_path):
     html_to_insert = generate_html_for_audio_files(directory)
 
     with open(template_html_file_path, 'r') as template_file:
         template_html_content = template_file.read()
 
+    # Replace audio files placeholder
     modified_html_content = template_html_content.replace('<!-- Audio files will be added here -->', html_to_insert)
+
+    # Replace combo audio file placeholder
+    combo_audio_link = f'| <a href="/{combined_loop_relative_path}">🎲 Loop</a>'
+    modified_html_content = modified_html_content.replace('<!-- Combo Audio File -->', combo_audio_link)
 
     with open(output_html_file_path, 'w') as output_file:
         output_file.write(modified_html_content)
@@ -264,15 +271,16 @@ def main():
     if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
         # Log and create a combined loop of processed audio files
         try:
-            create_combined_loop(combined_dir)
-            print(f"Combined audio loop created in {os.path.join(combined_dir, 'combined_loop_v1.wav')}")
+            combined_loop_filepath = create_combined_loop(combined_dir)  # Get the path of the created file
+            combined_loop_relative_path = os.path.relpath(combined_loop_filepath, base_dir)
+            print(f"Combined audio loop created in {combined_loop_filepath}")
         except Exception as e:
             print(f"Failed to create combined loop in {combined_dir}: {e}")
 
         # Create and archive the timestamped index.html in the archive directory
         timestamped_html_path = os.path.join(archive_dir, f'index.{timestamp}.html')
         try:
-            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', timestamped_html_path, loop_dir)
+            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', timestamped_html_path, loop_dir, combined_loop_relative_path)
             print(f"Timestamped index.html created at {timestamped_html_path}")
         except Exception as e:
             print(f"Error creating timestamped index.html: {e}")
@@ -285,7 +293,7 @@ def main():
 
         # Update the main index.html in /var/www/audio
         try:
-            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir, combined_loop_relative_path)
             print("Main index.html updated successfully at /var/www/audio/index.html")
         except Exception as e:
             print(f"Error updating main index.html: {e}")
@@ -294,7 +302,6 @@ def main():
 
     # End of script summary
     print(f"Script execution completed. Total successful WAVs: {total_success_count}")
-
 
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
@@ -332,13 +339,6 @@ def archive_existing_index(output_html_file_path, timestamp):
 def run_script():
     main()
     return "Script executed"
-
-# # Flask route for the home page
-# @app.route('/')
-# def home():
-#     main()  # This will execute your main function
-#     with open('/var/www/audio/index.html', 'r') as file:
-#         return file.read()
 
 # Update Flask route for the home page to use main_threaded
 @app.route('/')
