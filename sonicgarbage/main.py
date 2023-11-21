@@ -12,29 +12,49 @@ from flask import Flask
 # Initialize Flask app
 app = Flask(__name__, static_folder='/var/www/audio')
 
-
 # Base directory on the server (modify this path as needed)
 base_dir = '/var/www/audio'
 
-# Create the 'archive' folder if it does not exist
+# Directories for processed and raw WAVs
+processed_dir = os.path.join(base_dir, 'wavs', 'processed')
+raw_dir = os.path.join(base_dir, 'wavs', 'raw')
+loop_dir = os.path.join(processed_dir, 'loop')
+oneshot_dir = os.path.join(processed_dir, 'oneshot')
+combined_dir = os.path.join(processed_dir, 'combined')
+
+# Create necessary directories if they do not exist
+for dir in [processed_dir, raw_dir, loop_dir, oneshot_dir, combined_dir]:
+    os.makedirs(dir, exist_ok=True)
+
+# Archive directory
 archive_dir = os.path.join(base_dir, 'archive')
-if not os.path.exists(archive_dir):
-    os.makedirs(archive_dir)
+os.makedirs(archive_dir, exist_ok=True)
+
+
+# # Create the 'archive' folder if it does not exist
+# archive_dir = os.path.join(base_dir, 'archive')
+# if not os.path.exists(archive_dir):
+#     os.makedirs(archive_dir)
 
 # Revised function to create timestamped subfolders
-def create_timestamped_subfolders(base_dir, timestamp):
-    directories = ['wavs/processed/loop', 'wavs/processed/oneshot', 
-                   'wavs/raw', 'wavs/processed/combined']
+def create_timestamped_subfolders(timestamp):
+    directories = {
+        'processed_loop': loop_dir,
+        'processed_oneshot': oneshot_dir,
+        'raw': raw_dir,
+        'processed_combined': combined_dir
+    }
     timestamped_dirs = {}
-    for dir in directories:
-        path = os.path.join(base_dir, dir, timestamp)
+    for key, dir in directories.items():
+        path = os.path.join(dir, timestamp)
         os.makedirs(path, exist_ok=True)
-        timestamped_dirs[dir] = path
+        timestamped_dirs[key] = path
     return timestamped_dirs
 
 # Check if 'birdwater.txt' exists at the base directory, if not create it
 #word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
-word_list_file = '/var/www/audio/birdwater.txt'
+# word_list_file = '/var/www/audio/birdwater.txt'
+word_list_file = os.path.join(base_dir, 'birdwater.txt')
 
 if not os.path.exists(word_list_file):
     nltk.download('words')
@@ -47,10 +67,14 @@ if not os.path.exists(word_list_file):
 # Functions from the original notebook for audio processing
 BATCH_SIZE         = 320
 MAX_SEARCH_RESULTS = 10
-DOWNLOAD_DIR       = 'wavs/raw'
-LOOP_OUTPUT_DIR    = 'wavs/processed/loop'
-ONESHOT_OUTPUT_DIR = 'wavs/processed/oneshot'
-WORD_LIST          = 'birdwater.txt'
+# DOWNLOAD_DIR       = 'wavs/raw'
+# LOOP_OUTPUT_DIR    = 'wavs/processed/loop'
+# ONESHOT_OUTPUT_DIR = 'wavs/processed/oneshot'
+# WORD_LIST          = 'birdwater.txt'
+DOWNLOAD_DIR = raw_dir
+LOOP_OUTPUT_DIR = loop_dir
+ONESHOT_OUTPUT_DIR = oneshot_dir
+WORD_LIST = word_list_file
 
 def read_lines(file):
     return open(file).read().splitlines()
