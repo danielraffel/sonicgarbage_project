@@ -149,6 +149,37 @@ def home():
     with open('/var/www/audio/index.html', 'r') as file:
         return file.read()
 ```
+3) update the nginx config to remove direct Serving of index.html as a static file and pass the root URL to to Flask/Gunicorn instead.
 
+```
+# Redirect HTTP traffic to HTTPS
+server {
+    listen 80;
+    server_name yourdomain.com www.yourdomain.com;
+    return 301 https://$server_name$request_uri;
+}
+
+# HTTPS Server Block
+server {
+    listen 443 ssl http2;
+    server_name yourdomain.com www.yourdomain.com;
+
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem; # SSL certificate path
+    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem; # SSL key path
+
+    # Proxy all requests to Flask application
+    location / {
+        proxy_pass http://localhost:8080; # Ensure this matches Flask's port
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Additional SSL configurations, security headers, etc. can be added here
+}
+
+```
 
 
