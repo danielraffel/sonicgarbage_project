@@ -1,7 +1,7 @@
 # SonicGarbage README
 
 ## Introduction
-SonicGarbage is an audio processing project that creates unique soundscapes by combining elements from various audio sources. This project is inspired by the original work of [ColugoMusic](https://twitter.com/ColugoMusic/status/1726001266180956440?s=20) and further extends the concept using the power of Python and Flask.
+SonicGarbage is a project focused on audio processing, utilizing a custom-generated word dictionary to create a set of distinct audio samples each time you access it by sampling YouTube. This project is inspired by the original work of [ColugoMusic](https://twitter.com/ColugoMusic/status/1726001266180956440?s=20).
 
 ### Demo
 Currently running at [Polymetallic.co](https://Polymetallic.co)
@@ -37,36 +37,35 @@ Ensure you have the following installed on your Ubuntu server:
    `sudo vi /etc/nginx/sites-available/yourdomain.com`  
    Replace the content with the provided configuration, updating `yourdomain.com` with your actual domain.
 ```
-   # Redirect HTTP traffic to HTTPS
 server {
     listen 80;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name polymetallic.co www.polymetallic.co;
     return 301 https://$server_name$request_uri;
 }
 
 # HTTPS Server Block
 server {
     listen 443 ssl http2;
-    server_name yourdomain.com www.yourdomain.com;
+    server_name polymetallic.co www.polymetallic.co;
 
     # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem; # SSL certificate path
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem; # SSL key path
+    ssl_certificate /etc/letsencrypt/live/polymetallic.co/fullchain.pem; # SSL certificate path
+    ssl_certificate_key /etc/letsencrypt/live/polymetallic.co/privkey.pem; # SSL key path
 
-    # Root directory for static files
-    root /var/www/audio;
+    # Serve static files from the 'wavs' directory
+    location /wavs/ {
+        alias /var/www/audio/wavs/;
+        autoindex off;  # Turn this off in production for security
+    }
 
-    # Default index file
-    index index.html;
-
-    # Serve static files directly
-    location / {
-        try_files $uri $uri/ =404;
+    # Serve static files from the 'archive' directory
+    location /archive/ {
+        alias /var/www/audio/archive/;
+        autoindex off;  # Turn this off in production for security
     }
 
     # Proxy requests to Flask application
-    # Adjust if Flask app is running elsewhere or on a different port
-    location /app {
+    location / {
         proxy_pass http://localhost:8000;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
@@ -114,72 +113,26 @@ server {
    ```
 
 ### Additional References
-This is based on work that is described in this Google Colab file at [GitHub repository](https://github.com/danielraffel/dodgylegally).
+A Google Colab file was also created [GitHub repository](https://github.com/danielraffel/dodgylegally).
 
 ## What SonicGarbage Does
-SonicGarbage automates the process of creating unique samples from YouTube and lets you play (and download) them in your browser. It uses Python to:
-1. Generates random search phrases in birdwater.txt and downloads corresponding audio from YouTube.
-2. Processes the audio to create one-shotdodgylegally/wavs/oneshot/ and loop dodgylegally/wavs/loop/ samples
-3. Combines looped samples into a single audio file that repeats each sample 3-4 times, incrementing the version number to avoid overwriting. You can find it in dodgylegally/wavs/processed/combined/
+SonicGarbage streamlines the generation of unique audio samples from YouTube, enabling you to play and download them directly in your browser. Leveraging Python, it:
+
+1. Generates random search terms from 'birdwater.txt' and finds corresponding audio samples from YouTube.
+2. Processes the audio to produce single-shot and looped samples
+3. Creates a playable web page where you can scroll over the YouTube IDs the samples were taken from and mix them.
+4. Creates a combined looped audio file, repeating each sample 3-4 times
 
 The core script performs the following:
-- Manages audio file processing, including downloading, editing, and combining audio clips.
+- Manages audio file processing, including downloading, editing, and combining audio clips each time the page is loaded.
 - Generates and updates web pages to display and archive the created audio files.
 
-Notes: if you want to generate more or less audio files adjust `SUCCESSFUL_WAVS_REQUIRED = 12` in `main.py`
+### Configuration tips
+If you want to generate more or less audio files adjust `SUCCESSFUL_WAVS_REQUIRED = 12` in `main.py`
+
 It's currently set artificially low to 3 because I am running this on a [Google e2-micro instance](https://cloud.google.com/free/docs/free-cloud-features?hl=en#compute) (eg Always Free Tier) and it seems to have hiccups if I generate and convert too many. I've generated up to 12 files without hiccups and will keep testing.
 
 ## How to access the audio files
 Right clicking should download the audio files.
-
-## ToDo
-Get index.html to trigger flask/gunicorn to generate new files each time it's run. This script should be very close to enabling that but I've not landed it yet.
-
-I think I need to:
-1) Run Flask on Port 80 or 8080: By default, I am running Gunicorn on port 8000. So I probably need to edit the last part of `main.py`
-```
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080)
-```
-2) Set Up Flask to Serve `index.html` on Home Route: Modify the Flask route to serve `index.html` and ensure the `main()` function is called each time this route is accessed.
-```
-@app.route('/')
-def home():
-    main()  # This will execute your main function
-    with open('/var/www/audio/index.html', 'r') as file:
-        return file.read()
-```
-3) update the nginx config to remove direct Serving of index.html as a static file and pass the root URL to to Flask/Gunicorn instead.
-
-```
-# Redirect HTTP traffic to HTTPS
-server {
-    listen 80;
-    server_name yourdomain.com www.yourdomain.com;
-    return 301 https://$server_name$request_uri;
-}
-
-# HTTPS Server Block
-server {
-    listen 443 ssl http2;
-    server_name yourdomain.com www.yourdomain.com;
-
-    # SSL configuration
-    ssl_certificate /etc/letsencrypt/live/yourdomain.com/fullchain.pem; # SSL certificate path
-    ssl_certificate_key /etc/letsencrypt/live/yourdomain.com/privkey.pem; # SSL key path
-
-    # Proxy all requests to Flask application
-    location / {
-        proxy_pass http://localhost:8080; # Ensure this matches Flask's port
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-
-    # Additional SSL configurations, security headers, etc. can be added here
-}
-
-```
 
 
