@@ -8,6 +8,7 @@ import random
 import datetime
 import shutil
 from flask import Flask
+from threading import Thread
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='/var/www/audio')
@@ -26,15 +27,9 @@ combined_dir = os.path.join(processed_dir, 'combined')
 for dir in [processed_dir, raw_dir, loop_dir, oneshot_dir, combined_dir]:
     os.makedirs(dir, exist_ok=True)
 
-# Archive directory
+# Create the archive directory if it does not exist
 archive_dir = os.path.join(base_dir, 'archive')
 os.makedirs(archive_dir, exist_ok=True)
-
-
-# # Create the 'archive' folder if it does not exist
-# archive_dir = os.path.join(base_dir, 'archive')
-# if not os.path.exists(archive_dir):
-#     os.makedirs(archive_dir)
 
 # Revised function to create timestamped subfolders
 def create_timestamped_subfolders(timestamp):
@@ -52,8 +47,6 @@ def create_timestamped_subfolders(timestamp):
     return timestamped_dirs
 
 # Check if 'birdwater.txt' exists at the base directory, if not create it
-#word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
-# word_list_file = '/var/www/audio/birdwater.txt'
 word_list_file = os.path.join(base_dir, 'birdwater.txt')
 
 if not os.path.exists(word_list_file):
@@ -67,10 +60,6 @@ if not os.path.exists(word_list_file):
 # Functions from the original notebook for audio processing
 BATCH_SIZE         = 320
 MAX_SEARCH_RESULTS = 10
-# DOWNLOAD_DIR       = 'wavs/raw'
-# LOOP_OUTPUT_DIR    = 'wavs/processed/loop'
-# ONESHOT_OUTPUT_DIR = 'wavs/processed/oneshot'
-# WORD_LIST          = 'birdwater.txt'
 DOWNLOAD_DIR = raw_dir
 LOOP_OUTPUT_DIR = loop_dir
 ONESHOT_OUTPUT_DIR = oneshot_dir
@@ -217,6 +206,11 @@ def setup():
     if not os.path.exists(ONESHOT_OUTPUT_DIR):
         os.makedirs(ONESHOT_OUTPUT_DIR)
 
+# Define the main_threaded function
+def main_threaded():
+    thread = Thread(target=main)  # Create a thread targeting the main function
+    thread.start()  # Start the thread
+
 # Main function where audio processing happens
 MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for each phrase
 
@@ -233,7 +227,6 @@ def main():
     total_success_count = 0
 
     # Create timestamped subdirectories for this run
-    # timestamped_dirs = create_timestamped_subfolders(base_dir, timestamp)
     timestamped_dirs = create_timestamped_subfolders(timestamp)
     loop_dir = timestamped_dirs['processed_loop']
     oneshot_dir = timestamped_dirs['processed_oneshot']
@@ -340,13 +333,19 @@ def run_script():
     main()
     return "Script executed"
 
-# Flask route for the home page
+# # Flask route for the home page
+# @app.route('/')
+# def home():
+#     main()  # This will execute your main function
+#     with open('/var/www/audio/index.html', 'r') as file:
+#         return file.read()
+
+# Update Flask route for the home page to use main_threaded
 @app.route('/')
 def home():
-    main()  # This will execute your main function
+    main_threaded()  # Run main in a separate thread
     with open('/var/www/audio/index.html', 'r') as file:
-        return file.read()
-
+        return file.read()  # Serve index.html immediately
 
 # Run the Flask app if this script is run directly
 if __name__ == '__main__':
