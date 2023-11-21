@@ -33,7 +33,8 @@ def create_timestamped_subfolders(base_dir, timestamp):
     return timestamped_dirs
 
 # Check if 'birdwater.txt' exists at the base directory, if not create it
-word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
+#word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
+word_list_file = '/var/www/audio/birdwater.txt'
 
 if not os.path.exists(word_list_file):
     nltk.download('words')
