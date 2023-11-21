@@ -156,18 +156,14 @@ def generate_html_for_audio_files(directory):
     html_content = ""
     file_count = 0
 
-    # Fetching the timestamped subdirectories
-    timestamped_dirs = create_timestamped_subfolders(directory)
-    loop_dir = timestamped_dirs['wavs/processed/loop']
-
-    # List files in the timestamped loop directory
-    files = sorted([f for f in os.listdir(loop_dir) if f.endswith('.wav')])
+    # List files in the specified directory
+    files = sorted([f for f in os.listdir(directory) if f.endswith('.wav')])
 
     html_content += '<div class="row">'
 
     for file in files:
         file_name = file.split('-')[-1].split('.')[0]
-        file_path = os.path.relpath(os.path.join(loop_dir, file), directory)
+        file_path = os.path.relpath(os.path.join(directory, file), base_dir)  # Adjust path relative to base_dir
         # Add the audio file div without playback controls
         html_content += f'<div class="audio-file"><div>{file_name}</div><audio src="{file_path}"></audio></div>'
         
@@ -249,10 +245,10 @@ def main():
     create_combined_loop(combined_dir)  # Ensure this function is adjusted for the new directory
 
     # Generate new index.html with updated audio files
-    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)  # Adjust if needed
+    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
 
     # Archive existing index.html with the timestamp
-    archive_existing_index('/var/www/audio/index.html', timestamp)  # Make sure this function is adjusted for archiving with the timestamp
+    archive_existing_index('/var/www/audio/index.html', timestamp)
 
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
