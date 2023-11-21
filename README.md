@@ -94,6 +94,7 @@ server {
 8. **Run Gunicorn server**
    You can run CTRL+Z to suspend after running
    ```
+   cd /var/www/audio/sonicgarbage_project/sonicgarbage
    gunicorn -w 4 -b 0.0.0.0:8000 main:app
    ```
 
