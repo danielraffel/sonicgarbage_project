@@ -1,9 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <title>Sonic Garbage</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sonic Garbage</title>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8M60TL106J"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-8M60TL106J');
+    </script>
     <style>
         body {
             font-family: 'Courier New', monospace;
@@ -54,6 +63,11 @@
                 font-size: 1.5em; /* Smaller title on small screens */
             }
         }
+        .link-container a {
+        text-align: center;
+        margin-top: 20px; /* or any other value for spacing */
+        text-decoration: none;
+    }
     </style>    
 </head>
 <body>
@@ -174,6 +188,9 @@
                 });
             }
         };
-    </script>      
+    </script>
+    <div class="link-container">
+        <a href="/archive/">🗑️ Archive</a> | <a href="https://github.com/danielraffel/sonicgarbage_project">👨‍💻 Github</a> | <a href="https://x.com/ColugoMusic/status/1726285412774375808?s=20">💡 ColugoMusic</a> <!-- Combo Audio File -->
+    </div>    
 </body>
 </html>
