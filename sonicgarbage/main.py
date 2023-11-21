@@ -6,6 +6,7 @@ from yt_dlp import YoutubeDL
 import glob
 import random
 import datetime
+import shutil
 from flask import Flask
 
 # Initialize Flask app
@@ -248,30 +249,40 @@ def main():
         except Exception as e:
             print(f"Failed to create combined loop in {combined_dir}: {e}")
 
-        # Log and generate new index.html with updated audio files
+        # Create and archive the timestamped index.html in the archive directory
+        timestamped_html_path = os.path.join(archive_dir, f'index.{timestamp}.html')
+        try:
+            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', timestamped_html_path, loop_dir)
+            print(f"Timestamped index.html created at {timestamped_html_path}")
+        except Exception as e:
+            print(f"Error creating timestamped index.html: {e}")
+
+        # Update /archive/index.html with a link to the new timestamped index.html
+        try:
+            update_archive_html(timestamped_html_path)
+        except Exception as e:
+            print(f"Error updating /archive/index.html: {e}")
+
+        # Update the main index.html in /var/www/audio
         try:
             update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
-            print("index.html updated successfully at /var/www/audio/index.html")
+            print("Main index.html updated successfully at /var/www/audio/index.html")
         except Exception as e:
-            print(f"Failed to update index.html at /var/www/audio/index.html: {e}")
-
-        # Log and archive existing index.html with the timestamp
-        try:
-            archive_existing_index('/var/www/audio/index.html', timestamp)
-            archived_file_path = os.path.join(archive_dir, f'index.{timestamp}.html')
-            print(f"index.html archived successfully at {archived_file_path}")
-        except Exception as e:
-            print(f"Failed to archive index.html at {archive_dir}: {e}")
+            print(f"Error updating main index.html: {e}")
     else:
         print("Failed to generate the required number of audio files.")
 
     # End of script summary
     print(f"Script execution completed. Total successful WAVs: {total_success_count}")
 
+
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
     archive_index_path = os.path.join(archive_dir, 'index.html')
-    link = f'<li><a href="{archived_file_path}">{os.path.basename(archived_file_path)}</a></li>'
+    
+    # Extract the relative path from the archived file path
+    relative_path = os.path.relpath(archived_file_path, base_dir)
+    link = f'<li><a href="/{relative_path}">{os.path.basename(archived_file_path)}</a></li>'
 
     if not os.path.exists(archive_index_path):
         with open(archive_index_path, 'w') as archive_file:
@@ -290,12 +301,11 @@ def update_archive_html(archived_file_path):
 # Function to archive existing index.html
 def archive_existing_index(output_html_file_path, timestamp):
     if os.path.exists(output_html_file_path):
-        # Ensure the archived file is placed in the 'archive' directory
         archived_file_name = f'index.{timestamp}.html'
         archived_file_path = os.path.join(archive_dir, archived_file_name)
-        os.rename(output_html_file_path, archived_file_path)
-        # Update the archive index.html within the 'archive' directory
+        shutil.copy(output_html_file_path, archived_file_path)  # Copy instead of moving
         update_archive_html(archived_file_path)
+        print(f"Archived index.html at {archived_file_path}")
 
 # Flask route to trigger the main function
 @app.route('/run-script')
