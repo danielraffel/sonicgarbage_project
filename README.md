@@ -3,6 +3,9 @@
 ## Introduction
 SonicGarbage is an audio processing project that creates unique soundscapes by combining elements from various audio sources. This project is inspired by the original work of [ColugoMusic](https://twitter.com/ColugoMusic/status/1726001266180956440?s=20) and further extends the concept using the power of Python and Flask.
 
+### Demo
+Currently running at [Polymetallic.co](https://Polymetallic.co)
+
 ## Getting Started
 
 ### Prerequisites
