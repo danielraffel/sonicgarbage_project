@@ -161,8 +161,7 @@ def generate_html_for_audio_files(directory):
 
     for file in files:
         file_name = file.split('-')[-1].split('.')[0]
-        file_path = os.path.relpath(os.path.join(directory, file), base_dir)  # Adjust path relative to base_dir
-        # Add the audio file div without playback controls
+        file_path = '/' + os.path.relpath(os.path.join(directory, file), base_dir)
         html_content += f'<div class="audio-file"><div>{file_name}</div><audio src="{file_path}"></audio></div>'
         
         file_count += 1
