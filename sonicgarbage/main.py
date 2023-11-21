@@ -216,12 +216,14 @@ def main():
     # Adjusting paths in download options to the new raw_dir
     DOWNLOAD_DIR = raw_dir
 
+    # Loop to download and process videos until the required number of WAV files is reached
     while total_success_count < SUCCESSFUL_WAVS_REQUIRED:
         phrase = make_random_search_phrase(word_list)
         video_url = f'ytsearch1:"{phrase}"'
         options = make_download_options(phrase, DOWNLOAD_DIR)
         downloaded = False
 
+        # Attempt to download the video
         for _ in range(MAX_ATTEMPTS_PER_VIDEO):
             try:
                 downloaded = YoutubeDL(options).download([video_url]) == 0
@@ -230,6 +232,7 @@ def main():
             except Exception as err:
                 print(f"Error during download: {err}")
 
+        # If download is successful, process the video file
         if downloaded:
             for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
                 success = process_file(filepath, phrase, oneshot_dir, loop_dir)
@@ -237,14 +240,18 @@ def main():
                 if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
                     break
 
-    # Create combined loop
-    create_combined_loop(combined_dir)  # Ensure this function is adjusted for the new directory
+    # After achieving the target number of WAV files
+    if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
+        # Create a combined loop of processed audio files
+        create_combined_loop(combined_dir)
 
-    # Generate new index.html with updated audio files
-    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+        # Generate new index.html with updated audio files
+        update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
 
-    # Archive existing index.html with the timestamp
-    archive_existing_index('/var/www/audio/index.html', timestamp)
+        # Archive existing index.html with the timestamp
+        archive_existing_index('/var/www/audio/index.html', timestamp)
+    else:
+        print("Failed to generate the required number of audio files.")
 
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
