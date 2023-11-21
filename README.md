@@ -131,3 +131,24 @@ It's currently set artificially low to 3 because I am running this on a [Google 
 
 ## How to access the audio files
 Right clicking should download the audio files.
+
+## ToDo
+Get index.html to trigger flask/gunicorn to auto run. This script should be very close to enabling that but I've not quite landed it yet.
+
+I think I need to:
+1) Run Flask on Port 80 or 8080: By default, I am running Gunicorn on port 8000. So I probably need to edit the last part of `main.py`
+```
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=8080)
+```
+2) Set Up Flask to Serve `index.html` on Home Route: Modify the Flask route to serve `index.html` and ensure the `main()` function is called each time this route is accessed.
+```
+@app.route('/')
+def home():
+    main()  # This will execute your main function
+    with open('/var/www/audio/index.html', 'r') as file:
+        return file.read()
+```
+
+
+
