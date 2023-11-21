@@ -5,6 +5,7 @@ SonicGarbage is an audio processing project that creates unique soundscapes by c
 
 ### Demo
 Currently running at [Polymetallic.co](https://Polymetallic.co)
+There is an archive at [Polymetallic.co/archive](https://Polymetallic.co/archive)
 
 ## Getting Started
 
@@ -124,6 +125,9 @@ SonicGarbage automates the process of creating unique samples from YouTube and l
 The core script performs the following:
 - Manages audio file processing, including downloading, editing, and combining audio clips.
 - Generates and updates web pages to display and archive the created audio files.
+
+Notes: if you want to generate more or less audio files adjust `SUCCESSFUL_WAVS_REQUIRED = 12` in `main.py`
+It's currently set artificially low to 3 because I am running this on a [Google e2-micro instance](https://cloud.google.com/free/docs/free-cloud-features?hl=en#compute) (eg Always Free Tier) and it seems to have hiccups if I generate and convert too many. I've generated up to 12 files without hiccups and will keep testing.
 
 ## How to access the audio files
 Right clicking should download the audio files.
