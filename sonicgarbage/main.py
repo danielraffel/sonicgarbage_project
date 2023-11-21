@@ -88,7 +88,6 @@ def make_download_options(phrase, download_dir):
     }
 
 def process_file(filepath, phrase, oneshot_dir, loop_dir):
-    success_count = 0
     try:
         safe_phrase = ''.join(x for x in phrase if x.isalnum() or x in "._- ")
         filename = os.path.basename(filepath)
@@ -99,15 +98,14 @@ def process_file(filepath, phrase, oneshot_dir, loop_dir):
         if len(sound) > 500:
             if not os.path.exists(output_filepath_oneshot):
                 make_oneshot(sound, phrase, output_filepath_oneshot)
-                success_count += 1
             if not os.path.exists(output_filepath_loop):
                 make_loop(sound, phrase, output_filepath_loop)
-                success_count += 1
-        os.remove(filepath)
+            os.remove(filepath)
+            return 1  # Return 1 for a successful processing of the video
     except Exception as err:
-        print("Failed to process '{}' ({})".format(filepath, err))
+        print(f"Failed to process '{filepath}' ({err})")
 
-    return success_count
+    return 0
 
 def make_oneshot(sound, phrase, output_filepath):
   final_length = min(2000, len(sound))
@@ -196,6 +194,9 @@ def setup():
 # Main function where audio processing happens
 MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for each phrase
 
+# Number of successful WAV audio files required to end the script
+SUCCESSFUL_WAVS_REQUIRED = 3
+
 def main():
     # Generate a unique timestamp for this run
     timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -215,31 +216,26 @@ def main():
     # Adjusting paths in download options to the new raw_dir
     DOWNLOAD_DIR = raw_dir
 
-    while total_success_count < 3:
-        attempts = 0
-        while attempts < MAX_ATTEMPTS_PER_VIDEO:
-            phrase = make_random_search_phrase(word_list)
-            video_url = f'ytsearch1:"{phrase}"'
-            options = make_download_options(phrase, DOWNLOAD_DIR)  # Make sure this function is adjusted to take DOWNLOAD_DIR
+        while total_success_count < SUCCESSFUL_WAVS_REQUIRED:
+        phrase = make_random_search_phrase(word_list)
+        video_url = f'ytsearch1:"{phrase}"'
+        options = make_download_options(phrase, DOWNLOAD_DIR)
+        downloaded = False
 
+        for _ in range(MAX_ATTEMPTS_PER_VIDEO):
             try:
-                YoutubeDL(options).download([video_url])
-                # Process downloaded files
-                for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
-                    success_count = process_file(filepath, phrase, oneshot_dir, loop_dir)  # Adjust process_file to take new directories
-                    total_success_count += success_count
-                    if total_success_count >= 45:
-                        break
-                break  # Successful download, break out of the while loop
+                downloaded = YoutubeDL(options).download([video_url]) == 0
+                if downloaded:
+                    break
             except Exception as err:
-                if "requires payment" in str(err):
-                    print(f"Skipping paid video: {video_url}")
-                else:
-                    print(f'Error during download: {err}')
-                attempts += 1  # Increment attempts
+                print(f"Error during download: {err}")
 
-        if total_success_count >= 45:
-            break
+        if downloaded:
+            for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
+                success = process_file(filepath, phrase, oneshot_dir, loop_dir)
+                total_success_count += success
+                if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
+                    break
 
     # Create combined loop
     create_combined_loop(combined_dir)  # Ensure this function is adjusted for the new directory
