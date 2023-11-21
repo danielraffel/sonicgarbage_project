@@ -133,7 +133,7 @@ It's currently set artificially low to 3 because I am running this on a [Google 
 Right clicking should download the audio files.
 
 ## ToDo
-Get index.html to trigger flask/gunicorn to auto run. This script should be very close to enabling that but I've not quite landed it yet.
+Get index.html to trigger flask/gunicorn to generate new files each time it's run. This script should be very close to enabling that but I've not landed it yet.
 
 I think I need to:
 1) Run Flask on Port 80 or 8080: By default, I am running Gunicorn on port 8000. So I probably need to edit the last part of `main.py`
