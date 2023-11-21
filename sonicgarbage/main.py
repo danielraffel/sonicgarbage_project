@@ -30,14 +30,6 @@ def create_timestamped_subfolders(base_dir, timestamp):
         timestamped_dirs[dir] = path
     return timestamped_dirs
 
-# Using the new function to get the paths of the timestamped subdirectories
-timestamped_dirs = create_timestamped_subfolders(base_dir)
-
-loop_dir = timestamped_dirs['wavs/processed/loop']
-oneshot_dir = timestamped_dirs['wavs/processed/oneshot']
-raw_dir = timestamped_dirs['wavs/raw']
-combined_dir = timestamped_dirs['wavs/processed/combined']
-
 # Create the required folders if they don't exist
 os.makedirs(loop_dir, exist_ok=True)
 os.makedirs(oneshot_dir, exist_ok=True)
