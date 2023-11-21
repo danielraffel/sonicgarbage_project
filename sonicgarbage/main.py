@@ -144,12 +144,14 @@ def make_loop(sound, phrase, output_filepath):
     sound = effects.normalize(sound)
     sound.export(output_filepath, format="wav")
 
-def create_combined_loop(combined_dir):
+def create_combined_loop(combined_dir, timestamp):
     os.makedirs(combined_dir, exist_ok=True)  # Create the combined directory if it doesn't exist
 
+    # Adjust the path to the loop directory using the timestamp
+    loop_dir_with_timestamp = os.path.join(base_dir, 'wavs', 'processed', 'loop', timestamp)
+
     combined_loop = AudioSegment.silent(duration=100)  # A short silence to start
-    loop_dir = os.path.join(combined_dir, '..', 'loop')  # Adjust path to loop directory
-    for filepath in glob.glob(os.path.join(loop_dir, '*.wav')):
+    for filepath in glob.glob(os.path.join(loop_dir_with_timestamp, '*.wav')):
         sound = AudioSegment.from_file(filepath, format="wav")
         repeated_sound = sound * random.randint(3, 4)  # Repeat 3 or 4 times
         combined_loop += repeated_sound
@@ -271,7 +273,7 @@ def main():
     if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
         # Log and create a combined loop of processed audio files
         try:
-            combined_loop_filepath = create_combined_loop(combined_dir)  # Get the path of the created file
+            combined_loop_filepath = create_combined_loop(combined_dir, timestamp) # Get the path of the created file
             combined_loop_relative_path = os.path.relpath(combined_loop_filepath, base_dir)
             print(f"Combined audio loop created in {combined_loop_filepath}")
         except Exception as e:
