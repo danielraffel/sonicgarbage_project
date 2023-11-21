@@ -98,7 +98,11 @@ server {
    ```
 
 10. **Run the SonicGarbage script**  
-   `sonicgarbage`
+
+   ```
+   cd /var/www/audio
+   sonicgarbage
+   ```
 
    On completion, you should see output similar to the following:  
    ```
