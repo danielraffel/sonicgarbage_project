@@ -10,7 +10,8 @@ import shutil
 from flask import Flask
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='/var/www/audio')
+
 
 # Base directory on the server (modify this path as needed)
 base_dir = '/var/www/audio'
@@ -316,12 +317,8 @@ def run_script():
 # Flask route for the home page
 @app.route('/')
 def home():
-    # Call main function each time the home page is loaded
     main()
-
-    # Serve the updated index.html
-    with open('/var/www/audio/index.html', 'r') as file:
-        return file.read()
+    return app.send_static_file('index.html')
 
 # Run the Flask app if this script is run directly
 if __name__ == '__main__':
