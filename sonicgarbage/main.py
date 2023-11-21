@@ -30,12 +30,6 @@ def create_timestamped_subfolders(base_dir, timestamp):
         timestamped_dirs[dir] = path
     return timestamped_dirs
 
-# Create the required folders if they don't exist
-os.makedirs(loop_dir, exist_ok=True)
-os.makedirs(oneshot_dir, exist_ok=True)
-os.makedirs(raw_dir, exist_ok=True)
-os.makedirs(combined_dir, exist_ok=True)
-
 # Check if 'birdwater.txt' exists at the base directory, if not create it
 word_list_file = os.path.join('/var/www/audio', 'birdwater.txt')
 
