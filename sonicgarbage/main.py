@@ -322,10 +322,10 @@ def update_archive_html(archived_file_path):
     else:
         with open(archive_index_path, 'r+') as archive_file:
             content = archive_file.read()
-            position = content.find('</ul>')
-            content = content[:position] + link + content[position:]
+            position = content.find('<ul>') + len('<ul>')
+            updated_content = content[:position] + '\n' + link + content[position:]
             archive_file.seek(0)
-            archive_file.write(content)
+            archive_file.write(updated_content)
 
 # Function to archive existing index.html
 def archive_existing_index(output_html_file_path, timestamp):
