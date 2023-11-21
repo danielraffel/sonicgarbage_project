@@ -242,16 +242,31 @@ def main():
 
     # After achieving the target number of WAV files
     if total_success_count >= SUCCESSFUL_WAVS_REQUIRED:
-        # Create a combined loop of processed audio files
-        create_combined_loop(combined_dir)
+        # Log and create a combined loop of processed audio files
+        try:
+            create_combined_loop(combined_dir)
+            print(f"Combined audio loop created in {combined_dir}")
+        except Exception as e:
+            print(f"Failed to create combined loop: {e}")
 
-        # Generate new index.html with updated audio files
-        update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+        # Log and generate new index.html with updated audio files
+        try:
+            update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+            print("index.html updated successfully.")
+        except Exception as e:
+            print(f"Failed to update index.html: {e}")
 
-        # Archive existing index.html with the timestamp
-        archive_existing_index('/var/www/audio/index.html', timestamp)
+        # Log and archive existing index.html with the timestamp
+        try:
+            archive_existing_index('/var/www/audio/index.html', timestamp)
+            print("index.html archived successfully.")
+        except Exception as e:
+            print(f"Failed to archive index.html: {e}")
     else:
         print("Failed to generate the required number of audio files.")
+
+    # End of script summary
+    print(f"Script execution completed. Total successful WAVs: {total_success_count}")
 
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
