@@ -235,10 +235,10 @@ def main():
     # Create timestamped subdirectories for this run
     # timestamped_dirs = create_timestamped_subfolders(base_dir, timestamp)
     timestamped_dirs = create_timestamped_subfolders(timestamp)
-    loop_dir = timestamped_dirs['wavs/processed/loop']
-    oneshot_dir = timestamped_dirs['wavs/processed/oneshot']
-    raw_dir = timestamped_dirs['wavs/raw']
-    combined_dir = timestamped_dirs['wavs/processed/combined']
+    loop_dir = timestamped_dirs['processed_loop']
+    oneshot_dir = timestamped_dirs['processed_oneshot']
+    raw_dir = timestamped_dirs['raw']
+    combined_dir = timestamped_dirs['processed_combined']
 
     # Adjusting paths in download options to the new raw_dir
     DOWNLOAD_DIR = raw_dir
