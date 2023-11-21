@@ -20,8 +20,7 @@ if not os.path.exists(archive_dir):
     os.makedirs(archive_dir)
 
 # Revised function to create timestamped subfolders
-def create_timestamped_subfolders(base_dir):
-    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+def create_timestamped_subfolders(base_dir, timestamp):
     directories = ['wavs/processed/loop', 'wavs/processed/oneshot', 
                    'wavs/raw', 'wavs/processed/combined']
     timestamped_dirs = {}
@@ -89,11 +88,11 @@ def make_random_search_phrase(word_list):
     print('Search phrase: "{}"'.format(phrase))
     return phrase
 
-def make_download_options(phrase):
+def make_download_options(phrase, download_dir):
     safe_phrase = ''.join(x for x in phrase if x.isalnum() or x in "._- ")
     return {
         'format': 'bestaudio/best',
-        'paths': {'home': DOWNLOAD_DIR},
+        'paths': {'home': download_dir},
         'outtmpl': {'default': f'{safe_phrase}-%(id)s.%(ext)s'},
         'download_ranges': download_range_func(),
         'postprocessors': [{
@@ -102,13 +101,13 @@ def make_download_options(phrase):
         }]
     }
 
-def process_file(filepath, phrase):
+def process_file(filepath, phrase, oneshot_dir, loop_dir):
     success_count = 0
     try:
         safe_phrase = ''.join(x for x in phrase if x.isalnum() or x in "._- ")
         filename = os.path.basename(filepath)
-        output_filepath_oneshot = os.path.join(ONESHOT_OUTPUT_DIR, f'oneshot_{safe_phrase}-{filename}')
-        output_filepath_loop = os.path.join(LOOP_OUTPUT_DIR, f'loop_{safe_phrase}-{filename}')
+        output_filepath_oneshot = os.path.join(oneshot_dir, f'oneshot_{safe_phrase}-{filename}')
+        output_filepath_loop = os.path.join(loop_dir, f'loop_{safe_phrase}-{filename}')
 
         sound = AudioSegment.from_file(filepath, "wav")
         if len(sound) > 500:
@@ -145,12 +144,12 @@ def make_loop(sound, phrase, output_filepath):
     sound = effects.normalize(sound)
     sound.export(output_filepath, format="wav")
 
-def create_combined_loop():
-    combined_dir = os.path.join(base_dir, 'wavs/processed/combined')
+def create_combined_loop(combined_dir):
     os.makedirs(combined_dir, exist_ok=True)  # Create the combined directory if it doesn't exist
 
     combined_loop = AudioSegment.silent(duration=100)  # A short silence to start
-    for filepath in glob.glob(os.path.join(LOOP_OUTPUT_DIR, '*.wav')):
+    loop_dir = os.path.join(combined_dir, '..', 'loop')  # Adjust path to loop directory
+    for filepath in glob.glob(os.path.join(loop_dir, '*.wav')):
         sound = AudioSegment.from_file(filepath, format="wav")
         repeated_sound = sound * random.randint(3, 4)  # Repeat 3 or 4 times
         combined_loop += repeated_sound
@@ -216,22 +215,36 @@ def setup():
 MAX_ATTEMPTS_PER_VIDEO = 3  # Maximum number of attempts to download a video for each phrase
 
 def main():
+    # Generate a unique timestamp for this run
+    timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+
+    # Setup and read word list
     setup()
     word_list = read_lines(WORD_LIST)
     total_success_count = 0
 
-    while total_success_count < 45:
+    # Create timestamped subdirectories for this run
+    timestamped_dirs = create_timestamped_subfolders(base_dir, timestamp)
+    loop_dir = timestamped_dirs['wavs/processed/loop']
+    oneshot_dir = timestamped_dirs['wavs/processed/oneshot']
+    raw_dir = timestamped_dirs['wavs/raw']
+    combined_dir = timestamped_dirs['wavs/processed/combined']
+
+    # Adjusting paths in download options to the new raw_dir
+    DOWNLOAD_DIR = raw_dir
+
+    while total_success_count < 3:
         attempts = 0
         while attempts < MAX_ATTEMPTS_PER_VIDEO:
             phrase = make_random_search_phrase(word_list)
             video_url = f'ytsearch1:"{phrase}"'
-            options = make_download_options(phrase)
+            options = make_download_options(phrase, DOWNLOAD_DIR)  # Make sure this function is adjusted to take DOWNLOAD_DIR
 
             try:
                 YoutubeDL(options).download([video_url])
                 # Process downloaded files
                 for filepath in glob.glob(os.path.join(DOWNLOAD_DIR, f'{phrase}-*.wav')):
-                    success_count = process_file(filepath, phrase)
+                    success_count = process_file(filepath, phrase, oneshot_dir, loop_dir)  # Adjust process_file to take new directories
                     total_success_count += success_count
                     if total_success_count >= 45:
                         break
@@ -247,11 +260,13 @@ def main():
             break
 
     # Create combined loop
-    create_combined_loop()
+    create_combined_loop(combined_dir)  # Ensure this function is adjusted for the new directory
 
     # Generate new index.html with updated audio files
-    archive_existing_index('/var/www/audio/index.html')
-    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)
+    update_html_file('/var/www/audio/sonicgarbage_project/template_index.html', '/var/www/audio/index.html', loop_dir)  # Adjust if needed
+
+    # Archive existing index.html with the timestamp
+    archive_existing_index('/var/www/audio/index.html', timestamp)  # Make sure this function is adjusted for archiving with the timestamp
 
 # Function to update the archive index.html file
 def update_archive_html(archived_file_path):
@@ -273,16 +288,14 @@ def update_archive_html(archived_file_path):
             archive_file.write(content)
 
 # Function to archive existing index.html
-def archive_existing_index(output_html_file_path):
+def archive_existing_index(output_html_file_path, timestamp):
     if os.path.exists(output_html_file_path):
-        timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
         # Ensure the archived file is placed in the 'archive' directory
         archived_file_name = f'index.{timestamp}.html'
         archived_file_path = os.path.join(archive_dir, archived_file_name)
         os.rename(output_html_file_path, archived_file_path)
         # Update the archive index.html within the 'archive' directory
         update_archive_html(archived_file_path)
-
 
 # Flask route to trigger the main function
 @app.route('/run-script')
