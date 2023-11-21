@@ -216,7 +216,7 @@ def main():
     # Adjusting paths in download options to the new raw_dir
     DOWNLOAD_DIR = raw_dir
 
-        while total_success_count < SUCCESSFUL_WAVS_REQUIRED:
+    while total_success_count < SUCCESSFUL_WAVS_REQUIRED:
         phrase = make_random_search_phrase(word_list)
         video_url = f'ytsearch1:"{phrase}"'
         options = make_download_options(phrase, DOWNLOAD_DIR)
