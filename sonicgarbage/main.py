@@ -343,10 +343,11 @@ def run_script():
 # Flask route for the home page
 @app.route('/')
 def home():
-    main()
-    return app.send_static_file('index.html')
+    main()  # This will execute your main function
+    with open('/var/www/audio/index.html', 'r') as file:
+        return file.read()
+
 
 # Run the Flask app if this script is run directly
 if __name__ == '__main__':
-    main()  # Automatically run main functionality
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)
