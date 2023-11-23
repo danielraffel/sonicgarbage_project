@@ -133,6 +133,8 @@ If you want to generate more or less audio files adjust `SUCCESSFUL_WAVS_REQUIRE
 
 It's currently set artificially low to 3 because I am running this on a [Google e2-micro instance](https://cloud.google.com/free/docs/free-cloud-features?hl=en#compute) (eg Always Free Tier) and it seems to have hiccups if I generate and convert too many. I've generated up to 12 files without hiccups and will keep testing.
 
+To control auto starting the gunicorn service use gunicorn.service and follow the instructions
+
 ## How to access the audio files
 Right clicking should download the audio files.
 
