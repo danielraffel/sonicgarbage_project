@@ -14,7 +14,7 @@ Ensure you have the following installed on your Ubuntu server:
 - SSH access
 - FFMPEG for media processing
 - Python3 and pip for Python packages
-- Nginx for serving the web application
+- Nginx and Gunicorn for serving the web application
 - Certbot for SSL certificate management
 
 ### Installation
