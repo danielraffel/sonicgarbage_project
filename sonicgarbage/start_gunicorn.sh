@@ -1,6 +1,6 @@
 # use this to control starting the gunicorn service
 # sudo vi /etc/systemd/system/gunicorn.service
-# To start: sudo systemctl start gunicorn.
+# To start: sudo systemctl start gunicorn
 # To enable start on boot: sudo systemctl enable gunicorn
 # Status: sudo systemctl status gunicorn
 # Reload: sudo systemctl daemon-reload
